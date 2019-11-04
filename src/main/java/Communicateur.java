@@ -1,5 +1,6 @@
 public class Communicateur implements Lamport {
     private int clock;
+
     private EventBusService bus;
 
     public Communicateur() {
@@ -8,20 +9,16 @@ public class Communicateur implements Lamport {
         this.bus.registerSubscriber(this);
     }
 
-    public int getClock() {
-        return 0;
+    public synchronized int getClock() {
+        return this.clock;
     }
 
-    public void setClock(int newValue) {
-
+    public synchronized void setClock(int newValue) {
+        this.clock = newValue;
     }
 
-    public void lockClock() {
-
-    }
-
-    public void unlockClock() {
-
+    public synchronized void incrementClock() {
+        this.setClock(this.getClock() + 1);
     }
 
 
