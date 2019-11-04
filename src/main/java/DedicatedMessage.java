@@ -1,12 +1,12 @@
 public class DedicatedMessage extends Message {
-    private final String recipient;
+    private final int recipient;
 
-    public DedicatedMessage(String payload, int estampille, String recipient) {
+    public DedicatedMessage(String payload, int estampille, int recipient) {
         super(payload, estampille);
         this.recipient = recipient;
     }
 
-    public String getRecipient() {
+    public int getRecipient() {
         return recipient;
     }
 }
