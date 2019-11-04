@@ -1,7 +1,7 @@
 public interface Lamport {
-    public int getClock();
+    int getClock();
 
-    public void setClock(int newValue);
+    void setClock(int newValue);
 
-    public void incrementClock();
+    void incrementClock();
 }
