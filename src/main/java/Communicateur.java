@@ -19,6 +19,10 @@ public class Communicateur implements Lamport {
         this.bus.registerSubscriber(this);
     }
 
+    public int getId () {
+        return this.id;
+    }
+
     public synchronized int getClock() {
         return this.clock;
     }
@@ -32,7 +36,7 @@ public class Communicateur implements Lamport {
     }
 
     @Subscribe
-    public void onBroadCastMessageOnBus(BroadcastMessage b) {
+    public void onBroadCastMessageOnBus (BroadcastMessage b) {
         if (!(b.getSender() == this.id)) {
             System.out.println("P" + this.id + " receive message with estampille: " + b.getEstampille());
             System.out.println("P" + this.id + " actual clock: " + getClock());
@@ -44,12 +48,12 @@ public class Communicateur implements Lamport {
 
             this.boiteAuxLettres.add(b);
             System.out.println("P" + this.id + " le facteur est passé :p, il a déposé le message du processus n°" + b.getSender() +
-                    "avec le message suivant: " + b.getPayload());
+                    " avec le message suivant: " + b.getPayload());
         }
     }
 
     @Subscribe
-    public void onDedicatedMessageOnBus(DedicatedMessage b) {
+    public void onDedicatedMessageOnBus (DedicatedMessage b) {
         if (b.getRecipient() == this.id) {
             System.out.println("P" + this.id + " receive message with estampille: " + b.getEstampille());
             System.out.println("P" + this.id + " actual clock: " + getClock());
@@ -60,9 +64,20 @@ public class Communicateur implements Lamport {
             System.out.println("P" + this.id + " new clock : " + getClock());
 
             this.boiteAuxLettres.add(b);
-            System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus" + b.getRecipient() +
-                    "avec le message suivant: " + b.getPayload());
+            System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus n°" + b.getRecipient() +
+                    " avec le message suivant: " + b.getPayload());
         }
     }
 
+    public void broadcast (String payload) {
+        this.incrementClock();
+        BroadcastMessage b = new BroadcastMessage(payload, this.getClock(), this.id);
+        this.bus.postEvent(b);
+    }
+
+    public void sendTo (int recipientId, String payload) {
+        this.incrementClock();
+        DedicatedMessage d = new DedicatedMessage(payload, this.getClock(), recipientId);
+        this.bus.postEvent(d);
+    }
 }

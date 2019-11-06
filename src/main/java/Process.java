@@ -13,7 +13,22 @@ public class Process implements Runnable {
     }
 
     public void run() {
+        while (this.alive) {
+            String message = "Message du processus 1 pour le processus 2";
 
+            try {
+                Thread.sleep(500);
+                if (this.getId() == 1) {
+                    communicateur.sendTo(2, message);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private int getId () {
+        return this.communicateur.getId();
     }
 
     public void stop() {
