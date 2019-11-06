@@ -32,7 +32,11 @@ public class Process implements Runnable {
     }
 
     public void stop() {
+        this.getAndDisplayAllMessages();
         this.alive = false;
     }
 
+    private void getAndDisplayAllMessages(){
+        this.communicateur.getBoiteAuxLettres().getAllMessages().forEach(System.out::println);
+    }
 }
