@@ -14,6 +14,8 @@ public class Communicateur implements Lamport {
     private boolean attendJeton;
     private boolean isInSectionCritique;
     private boolean isSynchronized;
+    private static int nbProcessusEnAttenteDeBroadcastMessageSync;
+    private boolean attendsMessageBroadcastSync;
 
     public Communicateur() {
         nombreCommunicateurs++;
@@ -22,6 +24,7 @@ public class Communicateur implements Lamport {
         this.attendJeton = false;
         this.isInSectionCritique = false;
         this.isSynchronized = false;
+        this.attendsMessageBroadcastSync = false;
         this.listSynchroniseMessages = new ArrayList<>();
         this.boiteAuxLettres = new BoiteAuxLettres();
         this.bus = EventBusService.getInstance();
@@ -71,6 +74,15 @@ public class Communicateur implements Lamport {
     }
 
     @Subscribe
+    public void onBroadCastMessageSyncOnBus (BroadcastMessageSync b) {
+        if (!(b.getSender() == this.id)) {
+            this.attendsMessageBroadcastSync = false;
+            nbProcessusEnAttenteDeBroadcastMessageSync--;
+            System.out.println("P" + this.id + " message broadcast sync de " + b.getSender() + " reçu : " + b.getPayload());
+        }
+    }
+
+    @Subscribe
     public void onDedicatedMessageOnBus (DedicatedMessage b) {
         if (b.getRecipient() == this.id) {
             System.out.println("P" + this.id + " receive message with estampille: " + b.getEstampille());
@@ -103,12 +115,12 @@ public class Communicateur implements Lamport {
     }
 
     @Subscribe
-    public void onSynchroniseMessageOnBus (SynchronisedMessage s) throws InterruptedException {
+    public void onSynchroniseMessageOnBus (SynchronisedMessage s) {
         this.listSynchroniseMessages.add(s);
         if (this.listSynchroniseMessages.size() == nombreCommunicateurs) {
             int max = Collections.max(this.listSynchroniseMessages).getEstampille();
             setClock(max);
-            System.out.println("set clock becaose synchronize" + this.getClock());
+            System.out.println("P" + this.id + " set clock of processus " + this.id + " to " + this.getClock());
         }
     }
 
@@ -118,6 +130,27 @@ public class Communicateur implements Lamport {
         this.bus.postEvent(b);
     }
 
+    public void broadcastSync (String payload, int from) throws InterruptedException {
+        if(from == this.id) {
+            System.out.println("P" + this.id + " Attente broadcastSync FROM");
+            while(nbProcessusEnAttenteDeBroadcastMessageSync < nombreCommunicateurs - 1) {
+                Thread.sleep(10);
+            }
+            System.out.println("P" + this.id + "Fin attente broadcastSync FROM.... Envoi du message");
+            this.incrementClock();
+            BroadcastMessageSync b = new BroadcastMessageSync(payload, this.getClock(), this.id);
+            this.bus.postEvent(b);
+        } else {
+            System.out.println("P" + this.id + " Attente broadcastSync TO");
+            this.attendsMessageBroadcastSync = true;
+            nbProcessusEnAttenteDeBroadcastMessageSync++;
+            while(this.attendsMessageBroadcastSync) {
+                Thread.sleep(10);
+            }
+            System.out.println("P" + this.id + " Fin attente broadcastSync TO");
+        }
+    }
+
     public void sendTo (int recipientId, String payload) {
         this.incrementClock();
         DedicatedMessage d = new DedicatedMessage(payload, this.getClock(), recipientId);
@@ -125,6 +158,7 @@ public class Communicateur implements Lamport {
     }
 
     public void synchronize () throws InterruptedException {
+        System.out.println("Demande de synchronisation du processus " + this.id);
         // Envoie d'un message de synchronisation
         this.isSynchronized = false;
         this.incrementClock();

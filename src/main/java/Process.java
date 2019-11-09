@@ -17,16 +17,7 @@ public class Process implements Runnable {
             String message = "Message du processus 1 pour le processus 2";
 
             try {
-                this.communicateur.synchronize();
-
-                this.communicateur.requestSC(); // bloquant jusqu'à l'obtention de la section critique
-
-                Thread.sleep(500);
-                if (this.getId() == 1) {
-                    communicateur.sendTo(2, message);
-                }
-
-                this.communicateur.releaseSC(); // signifie au communicateur qu'il peut libèrer le jeton sur l'anneau
+                this.communicateur.broadcastSync(message,1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
