@@ -14,10 +14,14 @@ public class Process implements Runnable {
 
     public void run() {
         while (this.alive) {
-            String message = "Message du processus 1 pour le processus 2";
+            int sender = 1;
+            String message = "Message du processus n°" + sender;
 
             try {
-                this.communicateur.broadcastSync(message,1);
+                Message m = this.communicateur.broadcastSync(message, sender);
+                if (this.getId() != sender) {
+                    System.out.println(m.getPayload());
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

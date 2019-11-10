@@ -76,6 +76,7 @@ public class Communicateur implements Lamport {
     @Subscribe
     public void onBroadCastMessageSyncOnBus (BroadcastMessageSync b) {
         if (!(b.getSender() == this.id)) {
+            this.boiteAuxLettres.push(b);
             this.attendsMessageBroadcastSync = false;
             nbProcessusEnAttenteDeBroadcastMessageSync--;
             System.out.println("P" + this.id + " message broadcast sync de " + b.getSender() + " reçu : " + b.getPayload());
@@ -93,7 +94,7 @@ public class Communicateur implements Lamport {
             incrementClock();
             System.out.println("P" + this.id + " new clock : " + getClock());
 
-            this.boiteAuxLettres.push(b);
+            this.boiteAuxLettres.push(b);   // ici la boite au lettre fait uniquement office de medium pour transmettre le message au communicateur
             System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus n°" + b.getRecipient() +
                     " avec le message suivant: " + b.getPayload());
         }
@@ -130,7 +131,7 @@ public class Communicateur implements Lamport {
         this.bus.postEvent(b);
     }
 
-    public void broadcastSync (String payload, int from) throws InterruptedException {
+    public Message broadcastSync (String payload, int from) throws InterruptedException {
         if(from == this.id) {
             System.out.println("P" + this.id + " Attente broadcastSync FROM");
             while(nbProcessusEnAttenteDeBroadcastMessageSync < nombreCommunicateurs - 1) {
@@ -140,6 +141,7 @@ public class Communicateur implements Lamport {
             this.incrementClock();
             BroadcastMessageSync b = new BroadcastMessageSync(payload, this.getClock(), this.id);
             this.bus.postEvent(b);
+            return null;
         } else {
             System.out.println("P" + this.id + " Attente broadcastSync TO");
             this.attendsMessageBroadcastSync = true;
@@ -148,6 +150,7 @@ public class Communicateur implements Lamport {
                 Thread.sleep(10);
             }
             System.out.println("P" + this.id + " Fin attente broadcastSync TO");
+            return boiteAuxLettres.pop();
         }
     }
 

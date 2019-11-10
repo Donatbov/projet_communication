@@ -12,6 +12,10 @@ public class BoiteAuxLettres {
         this.boite.push(m);
     }
 
+    public Message pop(){
+        return this.boite.pop();
+    }
+
     public Deque<String> getAllMessages() {
         Deque<String> res = new ArrayDeque<>();
         this.boite.forEach(message -> {
