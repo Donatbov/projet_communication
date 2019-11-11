@@ -84,19 +84,35 @@ public class Communicateur implements Lamport {
     }
 
     @Subscribe
-    public void onDedicatedMessageOnBus (DedicatedMessage b) {
-        if (b.getRecipient() == this.id) {
-            System.out.println("P" + this.id + " receive message with estampille: " + b.getEstampille());
+    public void onDedicatedMessageOnBus (DedicatedMessage d) {
+        if (d.getRecipient() == this.id) {
+            System.out.println("P" + this.id + " receive message with estampille: " + d.getEstampille());
             System.out.println("P" + this.id + " actual clock: " + getClock());
-            if (b.getEstampille() > getClock()) {
-                setClock(b.getEstampille());
+            if (d.getEstampille() > getClock()) {
+                setClock(d.getEstampille());
             }
             incrementClock();
             System.out.println("P" + this.id + " new clock : " + getClock());
 
-            this.boiteAuxLettres.push(b);   // ici la boite au lettre fait uniquement office de medium pour transmettre le message au communicateur
-            System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus n°" + b.getRecipient() +
-                    " avec le message suivant: " + b.getPayload());
+            this.boiteAuxLettres.push(d);   // ici la boite au lettre fait uniquement office de medium pour transmettre le message au communicateur
+            System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus n°" + d.getRecipient() +
+                    " avec le message suivant: " + d.getPayload());
+        }
+    }
+
+    @Subscribe
+    public void onDedicatedSynchronisedMessageOnBus (DedicatedSynchronisedMessage d) {
+        if (d != null && d.getRecipient() == this.id) {
+            d.setReceivedTrue();
+            System.out.println("P" + this.id + " receive message with estampille: " + d.getEstampille());
+            System.out.println("P" + this.id + " actual clock: " + getClock());
+            if (d.getEstampille() > getClock()) {
+                setClock(d.getEstampille());
+            }
+            incrementClock();
+            this.boiteAuxLettres.push(d);   // ici la boite au lettre fait uniquement office de medium pour transmettre le message au communicateur
+            System.out.println("P" + this.id + " le facteur est passé :p, il a déposé un message pour le processus n°" + d.getRecipient() +
+                    " avec le message suivant: " + d.getPayload());
         }
     }
 
@@ -158,6 +174,16 @@ public class Communicateur implements Lamport {
         this.incrementClock();
         DedicatedMessage d = new DedicatedMessage(payload, this.getClock(), recipientId);
         this.bus.postEvent(d);
+    }
+
+    public void sendToSync(int recipientId, String payload) throws InterruptedException {
+        this.incrementClock();
+        DedicatedSynchronisedMessage m = new DedicatedSynchronisedMessage(payload, this.getClock(), this.getId(), recipientId);
+        this.bus.postEvent(m);
+        while(!m.isReceived()){
+            Thread.sleep(100);
+        }
+        System.out.println("Message sent & received !");
     }
 
     public void synchronize () throws InterruptedException {
